@@ -1,0 +1,571 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        #score-counter {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px;
+            background-color: #333;
+            border-bottom-right-radius: 10px;
+            color: white;
+            z-index: 999;
+        }
+
+        #quiz-container {
+            max-width: 600px;
+            margin: auto;
+            padding: 60px 20px 20px; /* تم تعديل ال padding ليضمن عدم تغطية الصورة */
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            position: relative; /* تمت إضافة position: relative; للسماح لـ #score-counter بالتحكم فيه */
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: white;
+            background-color: #2196F3;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0c0c0c;
+        }
+
+        #timer {
+            margin-bottom: 10px;
+        }
+
+        #result-container {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-text {
+            margin-bottom: 10px;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        /* CSS for displaying images to fit the screen */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="score-counter">Score: <span id="score">0</span></div>
+
+    <div id="quiz-container">
+        <img id="question-image" src="" alt="Question Image">
+        <div id="choices"></div>
+        <button onclick="checkAnswer()">Submit Answer</button>
+        <p id="timer"></p>
+    </div>
+
+    <div id="result-container">
+        <h2>Quiz Result</h2>
+        <p class="result-text" id="result"></p>
+        <div id="correct-answers"></div>
+        <button id="retryBtn" style="display: none;" onclick="retryQuiz()">Retry Quiz</button>
+    </div>
+
+    <script>
+        var currentQuestion = 0;
+        var score = 0;
+        var timeLeft = 1800; // تحديد عدد الثواني
+        var timerInterval;
+
+        var quizData = [
+
+        {
+  "question": "إذا كان طول ضلع المكعب هو 5 سم، فإن حجم المكعب هو ....سم3:",
+    "choices": ["512", "25", "125", "225"],
+  "correctAnswer": "125"
+},
+{
+  "question": "ما هو تعريف الشعاع",
+  "choices": [
+    "جزء من خط مستقيم يبدأ من نقطة معينة ويمتد في اتجاه معين إلى ما لا نهاية.",
+    "جزء من خط مستقيم يبدأ من نقطتين معينتين ويمتد في اتجاه معين إلى ما لا نهاية.",
+    "جزء من خط مستقيم يبدأ من نقطة معينة ويمتد في اتجاه معين إلى نقطة أخرى.",
+    "جزء من خط مستقيم يبدأ من نقطتين معينتين ويمتد في اتجاه معين إلى نقطة أخرى."
+  ],
+  "correctAnswer": "جزء من خط مستقيم يبدأ من نقطة معينة ويمتد في اتجاه معين إلى ما لا نهاية."
+},
+ {
+
+
+"question": "مكعب محيط احد أوجه 36 سم اوجد المساحة الجانبية للمكعب وكذالك المساحة الكلية",
+"choices": ["324 - 486", "300 - 460", "480 - 200"],
+"correctAnswer": "324 - 486"
+}, {
+
+"question": "متوازي المستطيلات له كم رأس وكم وجة",
+"choices": ["8 - 9", "8 - 10", "8 - 6"],
+"correctAnswer": "8 - 6"
+}, {
+
+"question": "لعب فريق كرة القدم 30 مباراة فكانت النتيجة انه فاز في 0.5 مباريات وتعادل في 0.3 مباريات احسب عدد المباريات التي خسر فيها",
+"choices": ["8", "12", "6"],
+"correctAnswer": "6"
+}, {
+
+"question": "قام فريق كرة قدم بلعب 70 مباراة , تعادل في 0.3 وفاز في 0.6 احسب عدد مباريات الفوز",
+"choices": ["42", "50", "30"],
+"correctAnswer": "42"
+}, {
+
+"question": "عند القاء قطعة نقود فإن احتمال ظهور كتابة",
+"choices": ["0.3", "0.5", "0.8"],
+"correctAnswer": "0.5"
+}, {
+
+"question": "المعكوس الجمعي لأي عدد اس صفرهو",
+"choices": ["-1", "1", "2"],
+"correctAnswer": "-1"
+}, {
+
+
+"question": "العدد النسبي A⁄B يكون موجبا إذا كان حاصل ضرب A,B",
+"choices": ["اكبر من الصفر", "اصغر من الصفر", "يساوي صفر"],
+"correctAnswer": "اكبر من الصفر"
+}, {
+
+"question": "العدد النسبي A⁄B الذي يساوي 3⁄5 ومجموع حدية 24",
+"choices": ["15/9", "20/7", "25/15"],
+"correctAnswer": "15/9"
+}, {
+
+"question": "المعكوس الضربي للرقم 1 هو",
+"choices": ["2", "- 1", "1"],
+"correctAnswer": "1"
+}, {
+
+"question": "9⁄20 تساوي",
+"choices": ["45%", "50%", "25%"],
+"correctAnswer": "45%"
+}, {
+
+"question": "القطران ينصف كل منهما الاخر في",
+"choices": ["متوازي الاضلاع والمستطيل", "المعين والمربع", "كل ماسبق"],
+"correctAnswer": "كل ماسبق"
+}, {
+
+"question": "القطران متعامدان في",
+"choices": ["المستطيل والمعين", "المربع والمعين", "المربع والمستطيل"],
+"correctAnswer": "المربع والمعين"
+}, {
+
+
+"question": "القطران متساويان في الطول ومتعامدان",
+"choices": ["المربع", "المستطيل", "المعين"],
+"correctAnswer": "المربع"
+}, {
+
+"question": "اشترى تاجربضاعة ب 2400 ثم باعها ب 1800 احسب النسبة المئوية للخسارة",
+"choices": ["25%", "60%", "40%"],
+"correctAnswer": "25%"
+}, {
+
+"question": "إذا كان 1⁄4 + A يساوي المعكوس الجمعي ل 3⁄4 فإن قيمة A تساوي",
+"choices": ["-2", "-1", "-4"],
+"correctAnswer": "-1"
+}, {
+
+"question": "خمس العدد 1⁄25 يساوي",
+"choices": ["1⁄125", "2⁄200", "3⁄525"],
+"correctAnswer": "1⁄125"
+}, {
+
+"question": "عدد محاور الشعاع",
+"choices": ["خمسة", "اثنان", "صفر"],
+"correctAnswer": "صفر"
+}, {
+
+"question": "عدد محاور السداسي المنتظم",
+"choices": ["8", "6", "2"],
+"correctAnswer": "6"
+}, {
+
+
+"question": "إذا كان قياس زاوية دائرية تساوي 60 فإنها تمثل",
+"choices": ["سدس الدائرة", "خمس الدائرة", "ربع الدائرة"],
+"correctAnswer": "سدس الدائرة"
+}, {
+
+"question": "إذا كان الوسط الحسابي للقيم 3 , 4 , 8 , A , A + 2 هو 15 فإن A تساوي",
+"choices": ["20", "39", "29"],
+"correctAnswer": "29"
+}, {
+
+"question": "إذا كان ترتيب الوسيط هو 8 فإن عدد القيم هو",
+"choices": ["15", "10", "8"],
+"correctAnswer": "15"
+}, {
+
+"question": "إذا كان المنوال للقيم 15 , 9 , X + 1 , 9 , 15 هو 9 فإن X تساوي",
+"choices": ["7", "8", "6"],
+"correctAnswer": "8"
+}, {
+
+"question": "أصغر عدد عوامله الاولية 2 , 5 , 7 هو",
+"choices": ["70", "80", "90"],
+"correctAnswer": "70"
+}, {
+
+"question": "اذا كان النسبة بين طول مستطيل وعرضة هي 2 : 1 فإن النسبة بين طولة ومحيطة هي",
+"choices": ["1 : 3", "2 : 4", "6 : 5"],
+"correctAnswer": "1 : 3"
+}, {
+
+
+"question": "إذا كان 15% من عدد ما يساوي 30 فإن العدد يساوي",
+"choices": ["478", "200", "350"],
+"correctAnswer": "200"
+}, {
+
+"question": "محيط مربع بيساوي 24 فإن طول ضلعه يساوي",
+"choices": ["5", "6", "2"],
+"correctAnswer": "6"
+}, {
+
+"question": "إذا كان لديك دائرة محيطها 44 فاوجد طول قطرها مع العلم أن π=22/7",
+"choices": ["14", "7", "10"],
+"correctAnswer": "14"
+}, {
+
+"question": "ثمن الدائرة يساوي",
+"choices": ["46", "45", "40"],
+"correctAnswer": "45"
+}, {
+
+
+"question": "إذا علمت أن نصف قطر الدائرة يساوي 14 سم و π =  22/7 فاوجد محيطها",
+"choices": ["20", "48", "88"],
+"correctAnswer": "88"
+}, {
+
+"question": "اطول وتر في الدائرة هو",
+"choices": ["القطر", "نصف القطر", "غير ذلك"],
+"correctAnswer": "القطر"
+
+},
+
+        {
+
+
+
+
+"question": "x + x^3 – 6 من الدرجة",
+ "choices": ["الأولى", "الثانية", "الثالثة"],
+ "correctAnswer": "الثالثة"
+ }, {
+
+
+
+"question": "2 ,8,5,7,الوسيط  لتلك  الاعداد هو",
+ "choices": ["2", "6", "10"],
+ "correctAnswer": "6"
+ }, {
+
+
+
+
+"question": "ما هو العدد الذي له عاملان فقط",
+ "choices": ["العدد الاولي", "العدد الفردي", "العدد الزوجي"],
+ "correctAnswer": "العدد الاولي"
+ }, {
+
+
+"question": " 0  = (x+2 )/20 فان x + 6 = ……",
+ "choices": ["6", "4", "2"],
+ "correctAnswer": "4"
+ }, {
+
+
+
+
+"question": "اذا كانت النسبة  بين بعدي مستطيل هي 3 : 4 وكان محيطة 140 سم فإن مساحتة تساوي",
+ "choices": ["1200", "2122", "4000"],
+ "correctAnswer": "1200"
+ }, {
+
+
+"question": "المعكوس الضربي للعدد  5/7 هو",
+ "choices": ["5", "7/5", "-5/7 "],
+ "correctAnswer": "7/5"
+ }, {
+
+"question": "متوازي مستطيلات طولة  6  سم وعرضة 4 سم وارتفاعة 8 سم اوجد المساحة الجانبية والمساحة الكلية",
+ "choices": ["160 - 208", "290 - 300", "200 – 400"],
+ "correctAnswer": "160 - 208"
+ }, {
+
+"question": "2 , 5 , 6 , 9 ,  2 , 3 , 5 المنوال هو",
+ "choices": ["2 , 3", "6 , 9", "2 , 5"],
+ "correctAnswer": "2 , 5"
+ }, {
+
+
+"question": "المحايد الضربي هو",
+ "choices": ["1", "0", "2"],
+ "correctAnswer": "1"
+ }, {
+
+
+
+
+
+
+"question": "اشترى محمد من إحدى معارض الكتب 26 كتاب سعر الكتاب الواحد 700 قرش فاوجد قيمة ما دفعة بالجنية",
+ "choices": ["125", "182", "200"],
+ "correctAnswer": "182"
+ }, {
+
+"question": "7 سم = .......مم",
+ "choices": ["700", "50", "70"],
+ "correctAnswer": "70"
+ }, {
+
+
+"question": "قطعة ارض مستطيلة  الشكل بعداها 3 كم و2 كم يراد إحاطتها بسور من السلك يتكلف المتر الواحد 8 جنيهات اوجد تكاليف السور",
+ "choices": ["4000", "1200", "80000"],
+ "correctAnswer": "80000"
+ }, {
+
+
+"question": "القطران متساويان  في الطول في كل من",
+ "choices": ["المربع والمستطيل", "المعين والمربع", "المستطيل والمعين"],
+ "correctAnswer": "المربع والمستطيل"
+ }, {
+
+"question": "   20/36 = x/9قيمة x هي",
+ "choices": ["6", "5", "4"],
+ "correctAnswer": "5"
+ }, {
+
+
+
+
+
+"question": "6000 مم = ..........سم",
+ "choices": ["60", "600", "1200"],
+ "correctAnswer": "600"
+ }, {
+
+"question": "مشى أحمد 5 كم في 6 ايام بانتظام فما عدد الكيلو مترات التي مشاها أحمد يوميا",
+ "choices": ["5/6", "6/5", "6*5"],
+ "correctAnswer": "5/6"
+ }, {
+
+
+"question": "عند دوران عقارب الساعة من 12 إلى العدد 9 في عكس إتجاه عقارب الساعة فإنة يكون قد صنع زاوية قياسها",
+ "choices": ["180", "60", "90"],
+ "correctAnswer": "90"
+ }, {
+
+
+"question": "عددان متتاليان اذا قمت بجمعهم ثم أضفت العدد  11 فإن الناتج يساوي حاصل ضرب العددين",
+ "choices": ["4و5", "6و7", "2و3"],
+ "correctAnswer": "4و5"
+ }, {
+
+
+"question": "الأضلاع المتساوية في الطول في كل من",
+ "choices": ["المربع والمستطيل", "متوازي الاضلاع والمعين", "المربع والمعين"],
+ "correctAnswer": "المربع والمعين"
+ }, {
+
+
+"question": "3.526 الرقم 6 هو جزء من",
+ "choices": ["الف", "مئة", "عشرة"],
+ "correctAnswer": "الف"
+
+
+
+ }
+
+        ];
+
+        // قم بترتيب الأسئلة بشكل عشوائي
+        shuffleArray(quizData);
+
+        function shuffleArray(array) {
+            for (var i = array.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = array[i];
+                array[i] = array[j];
+                array[j] = temp;
+            }
+            return array;
+        }
+
+        function loadQuestion() {
+            var currentQuiz = quizData[currentQuestion];
+
+            var questionImageElement = document.getElementById('question-image');
+            var choicesElement = document.getElementById('choices');
+
+            if (currentQuiz.imageSrc) {
+                questionImageElement.src = currentQuiz.imageSrc; // تعيين مصدر الصورة
+                questionImageElement.style.display = 'block'; // عرض الصورة
+            } else {
+                questionImageElement.style.display = 'none'; // إخفاء الصورة إذا لم تكن متاحة
+            }
+
+            choicesElement.innerHTML = '';
+
+            // عرض السؤال كنص عادي إذا لم يكن هناك صورة
+            if (!currentQuiz.imageSrc) {
+                choicesElement.innerHTML += '<p>' + currentQuiz.question + '</p>';
+            }
+
+            for (var i = 0; i < currentQuiz.choices.length; i++) {
+                var choice = currentQuiz.choices[i];
+                choicesElement.innerHTML += '<label><input type="radio" name="choice" value="' + choice + '"> ' + choice + '</label>';
+            }
+
+            startTimer(); // بدء الموقت عند تحميل كل سؤال
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(function () {
+                document.getElementById('timer').innerHTML = 'Time Left: ' + timeLeft + 's';
+
+                if (timeLeft === 0) {
+                    clearInterval(timerInterval);
+                    alert('Time is up!'); // عرض رسالة انتهاء الوقت
+                    showResult(); // عرض النتيجة النهائية عند انتهاء الوقت
+                } else {
+                    timeLeft--;
+                }
+            }, 1000);
+        }
+
+        function checkAnswer() {
+            var selectedOption = document.querySelector('input[name="choice"]:checked');
+            if (!selectedOption) {
+                alert('Please select an answer.');
+                return;
+            }
+
+            var userAnswer = selectedOption.value;
+            var currentQuiz = quizData[currentQuestion];
+
+            var choicesLabels = document.querySelectorAll('label');
+
+            for (var i = 0; i < choicesLabels.length; i++) {
+                if (currentQuiz.correctAnswer === currentQuiz.choices[i]) {
+                    choicesLabels[i].classList.add('correct');
+                } else {
+                    choicesLabels[i].classList.add('incorrect');
+                }
+            }
+
+            if (userAnswer === currentQuiz.correctAnswer) {
+                score++;
+                document.getElementById('score').textContent = score;
+            }
+
+            clearInterval(timerInterval); // قبل التحقق من الإجابة، قم بإيقاف الموقت
+
+            currentQuestion++;
+
+            if (currentQuestion < quizData.length) {
+                setTimeout(function () {
+                    loadQuestion();
+                    resetColors();
+                }, 3000);
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            var resultElement = document.getElementById('result');
+            var correctAnswersElement = document.getElementById('correct-answers');
+
+            resultElement.innerHTML = 'Your Score: ' + score + ' out of ' + quizData.length;
+
+            correctAnswersElement.innerHTML = '<h3>Correct Answers:</h3>';
+            for (var i = 0; i < quizData.length; i++) {
+                var q = quizData[i];
+                var imgSrc = q.imageSrc;
+                var imgElement = '<img src="' + imgSrc + '" alt="Question Image">';
+                correctAnswersElement.innerHTML += imgElement + '<strong>Q: ' + q.question + '</strong><br>A: ' + q.correctAnswer + '<br>';
+            }
+
+            document.getElementById('result-container').style.display = 'block';
+            document.getElementById('retryBtn').style.display = 'block';
+        }
+
+        function resetColors() {
+            var choicesLabels = document.querySelectorAll('label');
+            for (var i = 0; i < choicesLabels.length; i++) {
+                choicesLabels[i].classList.remove('correct', 'incorrect'); // إزالة الأنماط المضافة سابقًا
+            }
+        }
+
+        function retryQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            timeLeft = 1800; // إعادة تعيين الوقت للقيمة الأصلية
+
+            // قم بترتيب الأسئلة بشكل عشوائي عند إعادة المحاولة
+            shuffleArray(quizData);
+
+            document.getElementById('score').textContent = score; // تحديث قيمة العداد إلى الصفر
+            loadQuestion();
+            resetColors();
+
+            document.getElementById('result-container').style.display = 'none';
+            document.getElementById('retryBtn').style.display = 'none';
+        }
+
+        loadQuestion();
+    </script>
+
+</body>
+
+</html>
